@@ -37,6 +37,48 @@ static void normalize_image(float *buffer, const uint8_t *capture_data) {
   }
 }
 
+
+// int clipAndResizeImageByHW(CamImage& inputImg, CamImage& outputImg,
+//                            int lefttop_x, int lefttop_y,
+//                            int rightbottom_x, int rightbottom_y,
+//                            int dst_width, int dst_height) {
+//     // 入力画像が有効か確認
+//     if (!inputImg.isAvailable()) {
+//         return CAM_ERR_INVALID_PARAM;
+//     }
+
+//     // クリップ領域の幅と高さを計算
+//     int clip_width = rightbottom_x - lefttop_x + 1;
+//     int clip_height = rightbottom_y - lefttop_y + 1;
+
+//     // 入力画像の範囲外か確認
+//     if (lefttop_x < 0 || lefttop_y < 0 ||
+//         rightbottom_x >= inputImg.getWidth() || rightbottom_y >= inputImg.getHeight() ||
+//         clip_width <= 0 || clip_height <= 0) {
+//         return CAM_ERR_INVALID_PARAM;
+//     }
+
+//     // 出力画像の準備
+//     outputImg.setDimensions(dst_width, dst_height);
+
+//     // クリップ領域の情報を構造体に格納
+//     imageproc_rect_t rect = {lefttop_x, lefttop_y, rightbottom_x, rightbottom_y};
+
+//     // 画像の切り抜きとリサイズを実行
+//     int result = imageproc_clip_and_resize(
+//         inputImg.getImgBuff(), inputImg.getWidth(), inputImg.getHeight(),
+//         outputImg.getImgBuff(), dst_width, dst_height,
+//         16, // ビット深度
+//         &rect);
+
+//     if (result != 0) {
+//         return CAM_ERR_ILLEGAL_DEVERR;
+//     }
+
+//     return CAM_ERR_SUCCESS;
+// }
+
+
 /****************************************************************************
  * Main Function
  ****************************************************************************/

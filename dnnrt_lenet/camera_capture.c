@@ -8,12 +8,25 @@
 #include <nuttx/video/video.h>
 
 // グローバル変数: キャプチャされたデータを格納
-uint8_t capture_buffer[IMAGE_SIZE];
+uint8_t capture_buffer[VIDEO_HSIZE_QVGA * VIDEO_VSIZE_QVGA * 2];
 
 // スレッド関数: カメラからデータをキャプチャ
 void *capture_thread_func(void *arg) {
   int ret, v_fd;
-  struct v4l2_buffer v4l2_buf;
+  struct v4l2_format fmt =
+  {
+    0
+  };
+
+  struct v4l2_requestbuffers req =
+  {
+    0
+  };
+
+  struct v4l2_buffer buf =
+  {
+    0
+  };
 
   // カメラデバイスの初期化
   ret = video_initialize("/dev/video");
@@ -29,24 +42,36 @@ void *capture_thread_func(void *arg) {
     return NULL;
   }
 
+  // フォーマット設定
+  fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  fmt.fmt.pix.width = VIDEO_HSIZE_QVGA;
+  fmt.fmt.pix.height = VIDEO_VSIZE_QVGA;
+  ret = ioctl(v_fd, VIDIOC_S_FMT, (unsigned long)&fmt);
+  if (ret < 0)
+    {
+      printf("Failed to VIDIOC_S_FMT: errno = %d\n", errno);
+      return ret;
+    }
+
+
   // キャプチャ処理
   while (1) {
     // バッファからデータを取得
-    memset(&v4l2_buf, 0, sizeof(v4l2_buf));
-    v4l2_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    v4l2_buf.memory = V4L2_MEMORY_USERPTR;
+    memset(&buf, 0, sizeof(buf));
+    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buf.memory = V4L2_MEMORY_USERPTR;
 
-    ret = ioctl(v_fd, VIDIOC_DQBUF, (unsigned long)&v4l2_buf);
+    ret = ioctl(v_fd, VIDIOC_DQBUF, (unsigned long)&buf);
     if (ret < 0) {
       printf("Failed to dequeue buffer: errno = %d\n", errno);
       break;
     }
 
     // キャプチャデータをコピー
-    memcpy(capture_buffer, (void *)v4l2_buf.m.userptr, IMAGE_SIZE);
+    memcpy(capture_buffer, (void *)buf.m.userptr, IMAGE_SIZE);
 
     // バッファを再キュー
-    ret = ioctl(v_fd, VIDIOC_QBUF, (unsigned long)&v4l2_buf);
+    ret = ioctl(v_fd, VIDIOC_QBUF, (unsigned long)&buf);
     if (ret < 0) {
       printf("Failed to requeue buffer: errno = %d\n", errno);
       break;
