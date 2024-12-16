@@ -26,7 +26,7 @@
 #define CLIP_HEIGHT (224)
 #define DNN_WIDTH  (28)
 #define DNN_HEIGHT  (28)
-#define MNIST_SIZE_PX DNN_WIDTH * DNN_HEIGHT
+#define MNIST_SIZE_PX (DNN_WIDTH * DNN_HEIGHT)
 
 /****************************************************************************
  * Private Data
@@ -39,7 +39,7 @@ static volatile bool run_inference = true;  // 推論ループの制御
  ****************************************************************************/
 
 // キャプチャデータを正規化して推論用バッファに格納
-static void normalize_image(float *buffer, const uint16_t *capture_data) {
+static void normalize_image(float *buffer, uint8_t *capture_data) {
   imageproc_rect_t inrect;
   inrect.x1 = OFFSET_X;
   inrect.y1 = OFFSET_Y;
@@ -50,9 +50,9 @@ static void normalize_image(float *buffer, const uint16_t *capture_data) {
 
   printf("start normalize_image\n");
 
-  // 32バイトアラインメントでバッファ確保
-  uint16_t *clip_buffer = NULL;
-  if (posix_memalign((void **)&clip_buffer, 32, buffersize) != 0 || !clip_buffer) {
+  // 32バイトアラインメントでバッファを確保
+  uint8_t *clip_buffer = (uint8_t *)memalign(32, buffersize);
+  if (!clip_buffer) {
       printf("clip_buffer allocation failed\n");
       return;
   }
@@ -71,11 +71,10 @@ static void normalize_image(float *buffer, const uint16_t *capture_data) {
   printf("monochrome and normalize\n");
 
   // 画像のモノクロ化と正規化
+  // カラー画像 (YUV422) から輝度成分 (Y) を抽出して正規化
   for (int i = 0; i < MNIST_SIZE_PX; i++) {
-    // 高ビットと低ビットからモノクロ値を作成し、正規化
-    buffer[i] = (float)(((clip_buffer[i] & 0xf000) >> 8)   // 高ビットシフト
-                      | ((clip_buffer[i] & 0x00f0) >> 4))  // 低ビットシフト
-                / 255.0f;
+      // YUV422形式: Y (偶数バイト)、U/V (奇数バイト)
+      buffer[i] = (float)(clip_buffer[2 * i]) / 255.0f;
   }
 
   // バッファ解放
@@ -94,6 +93,12 @@ int main(int argc, char *argv[]) {
   nn_network_t *network;
   struct timeval begin, end;
   pthread_t capture_thread;
+
+
+  int v_fd;
+  struct v4l2_buffer v4l2_buf;
+  v_buffer_t *buffers_video = NULL;
+  void *dest_buffer;
 
   // ニューラルネットワークモデルのロード
   printf("Loading neural network model: %s\n", DNN_NNB_PATH);
@@ -121,36 +126,64 @@ int main(int argc, char *argv[]) {
   }
 
   // カメラの初期化
-  ret = camera_prepare();
-  if (ret) {
-    printf("Failed to initialize camera: %d\n", ret);
-    dnn_runtime_finalize(&rt);
-    dnn_finalize();
-    destroy_nnb_network(network);
-    return -1;
+  ret = video_initialize("/dev/video");
+  if (ret != 0)
+  {
+    printf("ERROR: Failed to initialize video: errno = %d\n", errno);
+    return ERROR;
+  }
+
+  v_fd = open("/dev/video", 0);
+  if (v_fd < 0)
+  {
+    printf("ERROR: Failed to open video device: errno = %d\n", errno);
+    return ERROR;
+  }
+
+  ret = camera_prepare(v_fd, V4L2_BUF_TYPE_VIDEO_CAPTURE, V4L2_BUF_MODE_RING, V4L2_PIX_FMT_UYVY, VIDEO_HSIZE_QVGA, VIDEO_VSIZE_QVGA, &buffers_video, 3, IMAGE_RGB_SIZE);
+  if (ret != OK)
+  {
+    close(v_fd);
+    return ERROR;
+  }
+
+  dest_buffer = malloc(IMAGE_RGB_SIZE);
+  if (!dest_buffer)
+  {
+    printf("ERROR: Failed to allocate memory for image buffer\n");
+    free_buffer(buffers_video, 3);
+    close(v_fd);
+    return ERROR;
   }
 
   // 画像処理ライブラリの初期化
   imageproc_initialize();
 
-  // // キャプチャスレッドの作成
-  // printf("Starting capture thread...\n");
-  // ret = pthread_create(&capture_thread, NULL, capture_thread_func, NULL);
-  // if (ret != 0) {
-  //   printf("Failed to create capture thread: %d\n", ret);
-  //   dnn_runtime_finalize(&rt);
-  //   dnn_finalize();
-  //   destroy_nnb_network(network);
-  //   return -1;
-  // }
-
   // 推論ループ
   printf("Starting inference...\n");
   while (run_inference) {
-    capture_func(NULL);
-    // キャプチャデータを正規化
-    normalize_image(s_img_buffer, capture_buffer);
 
+  ret = get_camimage(v_fd, &v4l2_buf, V4L2_BUF_TYPE_VIDEO_CAPTURE, dest_buffer, IMAGE_RGB_SIZE);
+  if (ret != OK)
+  {
+    free(dest_buffer);
+    free_buffer(buffers_video, 3);
+    close(v_fd);
+    return ERROR;
+  }    
+
+    // キャプチャデータを正規化
+    normalize_image(s_img_buffer, dest_buffer);
+
+
+  ret = release_camimage(v_fd, &v4l2_buf);
+  if (ret != OK)
+  {
+    free(dest_buffer);
+    free_buffer(buffers_video, 3);
+    close(v_fd);
+    return ERROR;
+  }
     // 推論処理
     printf("Running inference...\n");
     gettimeofday(&begin, 0);
@@ -177,16 +210,15 @@ int main(int argc, char *argv[]) {
     sleep(1);
   }
 
-  // // キャプチャスレッドの終了
-  // pthread_cancel(capture_thread);
-  // pthread_join(capture_thread, NULL);
-
   // 後処理
   printf("Shutting down...\n");
   dnn_runtime_finalize(&rt);
   dnn_finalize();
   destroy_nnb_network(network);
   imageproc_finalize();
+  free(dest_buffer);
+  free_buffer(buffers_video, 3);
+  close(v_fd);
 
   return 0;
 }

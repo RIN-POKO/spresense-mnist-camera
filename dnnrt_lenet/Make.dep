@@ -1,26 +1,24 @@
 camera_capture.c.home.r_okudera.Spresense_DEV.DNNRT_sample.dnnrt_lenet.o: \
  camera_capture.c camera_capture.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/config.h \
- /home/r_okudera/Spresense_DEV/spresense/nuttx/include/pthread.h \
- /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/compiler.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/stdio.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/sys/types.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/compiler.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/stdint.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/arch/types.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/arch/inttypes.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/limits.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/arch/limits.h \
- /home/r_okudera/Spresense_DEV/spresense/nuttx/include/stdbool.h \
- /home/r_okudera/Spresense_DEV/spresense/nuttx/include/unistd.h \
- /home/r_okudera/Spresense_DEV/spresense/nuttx/include/signal.h \
- /home/r_okudera/Spresense_DEV/spresense/nuttx/include/time.h \
- /home/r_okudera/Spresense_DEV/spresense/nuttx/include/semaphore.h \
- /home/r_okudera/Spresense_DEV/spresense/nuttx/include/stdio.h \
  /home/r_okudera/spresenseenv/usr/lib/gcc/arm-none-eabi/10.3.1/include/stdarg.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/time.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/fs/fs.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/stdbool.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/mutex.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/errno.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/assert.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/unistd.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/semaphore.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/semaphore.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/clock.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/sched.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/queue.h \
@@ -29,6 +27,8 @@ camera_capture.c.home.r_okudera.Spresense_DEV.DNNRT_sample.dnnrt_lenet.o: \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/string.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/stddef.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/queue.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/signal.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/pthread.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/irq.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/arch/irq.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/arch/chip/irq.h \
@@ -51,10 +51,7 @@ camera_capture.c.home.r_okudera.Spresense_DEV.DNNRT_sample.dnnrt_lenet.o: \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/serial/tioctl.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/net/ioctl.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/video.h \
- /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/video_controls.h \
- /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/isx012.h \
- /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/isx019.h \
- /home/r_okudera/Spresense_DEV/spresense/nuttx/include/arch/chip/cisif.h
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/video_controls.h
 loader_nnb.c.home.r_okudera.Spresense_DEV.DNNRT_sample.dnnrt_lenet.o: \
  loader_nnb.c \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/stdio.h \
@@ -169,9 +166,6 @@ dnnrt_lenet_main.c.home.r_okudera.Spresense_DEV.DNNRT_sample.dnnrt_lenet.o: \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/serial/tioctl.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/net/ioctl.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/video.h \
- /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/video_controls.h \
- /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/isx012.h \
- /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/isx019.h \
- /home/r_okudera/Spresense_DEV/spresense/nuttx/include/arch/chip/cisif.h
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/video_controls.h
 # No files specified for dependency generation
 # No files specified for dependency generation
