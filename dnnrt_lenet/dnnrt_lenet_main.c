@@ -12,80 +12,83 @@
 #include <sys/time.h>
 #include <nuttx/config.h>
 #include <dnnrt/runtime.h>
+#include <arch/board/cxd56_imageproc.h>
 #include "loader_nnb.h"
-#include "camera_capture.h"  // キャプチャスレッド用ヘッダー
+#include "camera_capture.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 #define DNN_NNB_PATH "/mnt/sd0/lenet-5.nnb"
-#define MNIST_SIZE_PX (28 * 28)
+#define OFFSET_X  (104)
+#define OFFSET_Y  (0)
+#define CLIP_WIDTH (112)
+#define CLIP_HEIGHT (224)
+#define DNN_WIDTH  (28)
+#define DNN_HEIGHT  (28)
+#define MNIST_SIZE_PX DNN_WIDTH * DNN_HEIGHT
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 static float s_img_buffer[MNIST_SIZE_PX];  // 推論用バッファ
+static volatile bool run_inference = true;  // 推論ループの制御
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
 // キャプチャデータを正規化して推論用バッファに格納
-static void normalize_image(float *buffer, const uint8_t *capture_data) {
-  for (int i = 0; i < MNIST_SIZE_PX; i++) {
-    buffer[i] = (float)capture_data[i] / 255.0f;
+static void normalize_image(float *buffer, const uint16_t *capture_data) {
+  imageproc_rect_t inrect;
+  inrect.x1 = OFFSET_X;
+  inrect.y1 = OFFSET_Y;
+  inrect.x2 = OFFSET_X + CLIP_WIDTH - 1;
+  inrect.y2 = OFFSET_Y + CLIP_HEIGHT - 1;
+  int buffersize = MNIST_SIZE_PX * sizeof(uint16_t); // ピクセル数 × バイト数
+
+
+  printf("start normalize_image\n");
+
+  // 32バイトアラインメントでバッファ確保
+  uint16_t *clip_buffer = NULL;
+  if (posix_memalign((void **)&clip_buffer, 32, buffersize) != 0 || !clip_buffer) {
+      printf("clip_buffer allocation failed\n");
+      return;
   }
+
+  printf("clip and resize\n");
+
+  // 画像の切り抜きとリサイズ
+  int ret = imageproc_clip_and_resize(capture_data, VIDEO_HSIZE_QVGA, VIDEO_VSIZE_QVGA,
+                                      clip_buffer, DNN_WIDTH, DNN_HEIGHT, 16, &inrect);
+  if (ret) {
+    printf("Failed to clip and resize image: %d\n", ret);
+    free(clip_buffer);
+    return;
+  }
+
+  printf("monochrome and normalize\n");
+
+  // 画像のモノクロ化と正規化
+  for (int i = 0; i < MNIST_SIZE_PX; i++) {
+    // 高ビットと低ビットからモノクロ値を作成し、正規化
+    buffer[i] = (float)(((clip_buffer[i] & 0xf000) >> 8)   // 高ビットシフト
+                      | ((clip_buffer[i] & 0x00f0) >> 4))  // 低ビットシフト
+                / 255.0f;
+  }
+
+  // バッファ解放
+  free(clip_buffer);
 }
-
-
-// int clipAndResizeImageByHW(CamImage& inputImg, CamImage& outputImg,
-//                            int lefttop_x, int lefttop_y,
-//                            int rightbottom_x, int rightbottom_y,
-//                            int dst_width, int dst_height) {
-//     // 入力画像が有効か確認
-//     if (!inputImg.isAvailable()) {
-//         return CAM_ERR_INVALID_PARAM;
-//     }
-
-//     // クリップ領域の幅と高さを計算
-//     int clip_width = rightbottom_x - lefttop_x + 1;
-//     int clip_height = rightbottom_y - lefttop_y + 1;
-
-//     // 入力画像の範囲外か確認
-//     if (lefttop_x < 0 || lefttop_y < 0 ||
-//         rightbottom_x >= inputImg.getWidth() || rightbottom_y >= inputImg.getHeight() ||
-//         clip_width <= 0 || clip_height <= 0) {
-//         return CAM_ERR_INVALID_PARAM;
-//     }
-
-//     // 出力画像の準備
-//     outputImg.setDimensions(dst_width, dst_height);
-
-//     // クリップ領域の情報を構造体に格納
-//     imageproc_rect_t rect = {lefttop_x, lefttop_y, rightbottom_x, rightbottom_y};
-
-//     // 画像の切り抜きとリサイズを実行
-//     int result = imageproc_clip_and_resize(
-//         inputImg.getImgBuff(), inputImg.getWidth(), inputImg.getHeight(),
-//         outputImg.getImgBuff(), dst_width, dst_height,
-//         16, // ビット深度
-//         &rect);
-
-//     if (result != 0) {
-//         return CAM_ERR_ILLEGAL_DEVERR;
-//     }
-
-//     return CAM_ERR_SUCCESS;
-// }
-
 
 /****************************************************************************
  * Main Function
  ****************************************************************************/
 int main(int argc, char *argv[]) {
   int ret;
-  unsigned char i;
-  float *output_buffer, proc_time;
+  float *output_buffer;
+  float proc_time;
   dnn_runtime_t rt;
   dnn_config_t config = {.cpu_num = 1};
   nn_network_t *network;
@@ -108,6 +111,7 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
+  // DNNランタイムオブジェクトの初期化
   ret = dnn_runtime_initialize(&rt, network);
   if (ret) {
     printf("Failed to initialize DNN runtime object: %d\n", ret);
@@ -116,20 +120,34 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  // キャプチャスレッドの作成
-  printf("Starting capture thread...\n");
-  ret = pthread_create(&capture_thread, NULL, capture_thread_func, NULL);
-  if (ret != 0) {
-    printf("Failed to create capture thread: %d\n", ret);
+  // カメラの初期化
+  ret = camera_prepare();
+  if (ret) {
+    printf("Failed to initialize camera: %d\n", ret);
     dnn_runtime_finalize(&rt);
     dnn_finalize();
     destroy_nnb_network(network);
     return -1;
   }
 
+  // 画像処理ライブラリの初期化
+  imageproc_initialize();
+
+  // // キャプチャスレッドの作成
+  // printf("Starting capture thread...\n");
+  // ret = pthread_create(&capture_thread, NULL, capture_thread_func, NULL);
+  // if (ret != 0) {
+  //   printf("Failed to create capture thread: %d\n", ret);
+  //   dnn_runtime_finalize(&rt);
+  //   dnn_finalize();
+  //   destroy_nnb_network(network);
+  //   return -1;
+  // }
+
   // 推論ループ
   printf("Starting inference...\n");
-  while (1) {
+  while (run_inference) {
+    capture_func(NULL);
     // キャプチャデータを正規化
     normalize_image(s_img_buffer, capture_buffer);
 
@@ -146,8 +164,8 @@ int main(int argc, char *argv[]) {
     // 推論結果を取得
     output_buffer = dnn_runtime_output_buffer(&rt, 0);
     printf("Inference result:\n");
-    for (i = 0; i < 10; i++) {
-      printf("output[%u]=%.6f\n", i, output_buffer[i]);
+    for (int i = 0; i < 10; i++) {
+      printf("output[%d]=%.6f\n", i, output_buffer[i]);
     }
 
     // 推論処理時間の表示
@@ -159,15 +177,16 @@ int main(int argc, char *argv[]) {
     sleep(1);
   }
 
-  // キャプチャスレッドの終了
-  pthread_cancel(capture_thread);
-  pthread_join(capture_thread, NULL);
+  // // キャプチャスレッドの終了
+  // pthread_cancel(capture_thread);
+  // pthread_join(capture_thread, NULL);
 
   // 後処理
   printf("Shutting down...\n");
   dnn_runtime_finalize(&rt);
   dnn_finalize();
   destroy_nnb_network(network);
+  imageproc_finalize();
 
   return 0;
 }

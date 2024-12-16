@@ -46,12 +46,15 @@ camera_capture.c.home.r_okudera.Spresense_DEV.DNNRT_sample.dnnrt_lenet.o: \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/addrenv.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/stdlib.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/fcntl.h \
- /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/video.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/sys/ioctl.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/fs/ioctl.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/serial/tioctl.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/net/ioctl.h \
- /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/video_controls.h
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/video.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/video_controls.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/isx012.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/isx019.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/arch/chip/cisif.h
 loader_nnb.c.home.r_okudera.Spresense_DEV.DNNRT_sample.dnnrt_lenet.o: \
  loader_nnb.c \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/stdio.h \
@@ -158,6 +161,17 @@ dnnrt_lenet_main.c.home.r_okudera.Spresense_DEV.DNNRT_sample.dnnrt_lenet.o: \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/malloc.h \
  /home/r_okudera/Spresense_DEV/spresense/sdk/modules/include/asmp/types.h \
  /home/r_okudera/Spresense_DEV/spresense/sdk/modules/include/dnnrt/nnablart/network.h \
- loader_nnb.h camera_capture.h
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/arch/board/cxd56_imageproc.h \
+ loader_nnb.h camera_capture.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/fcntl.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/sys/ioctl.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/fs/ioctl.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/serial/tioctl.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/net/ioctl.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/video.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/video_controls.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/isx012.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/video/isx019.h \
+ /home/r_okudera/Spresense_DEV/spresense/nuttx/include/arch/chip/cisif.h
 # No files specified for dependency generation
 # No files specified for dependency generation
