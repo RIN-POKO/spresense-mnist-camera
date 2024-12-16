@@ -1,0 +1,8 @@
+# Directories
+.vscode/
+
+# Prerequisites
+*.d
+
+# Object files
+*.o

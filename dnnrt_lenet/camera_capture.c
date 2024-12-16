@@ -120,7 +120,7 @@ int get_camimage(int fd, FAR struct v4l2_buffer *v4l2_buf, enum v4l2_buf_type bu
     return ERROR;
   }
 
-  memcpy(dest_buffer, (void *)v4l2_buf->m.userptr, v4l2_buf->length);
+  // printf("Captured image size: %d bytes\n", v4l2_buf->length);
   return OK;
 }
 
@@ -132,74 +132,5 @@ int release_camimage(int fd, FAR struct v4l2_buffer *v4l2_buf)
     printf("Fail QBUF %d\n", errno);
     return ERROR;
   }
-  return OK;
-}
-
-/****************************************************************************
- * Main Function
- ****************************************************************************/
-
-int main(void)
-{
-  int ret;
-  int v_fd;
-  struct v4l2_buffer v4l2_buf;
-  v_buffer_t *buffers_video = NULL;
-  void *dest_buffer;
-
-  ret = video_initialize("/dev/video");
-  if (ret != 0)
-  {
-    printf("ERROR: Failed to initialize video: errno = %d\n", errno);
-    return ERROR;
-  }
-
-  v_fd = open("/dev/video", O_RDWR);
-  if (v_fd < 0)
-  {
-    printf("ERROR: Failed to open video device: errno = %d\n", errno);
-    return ERROR;
-  }
-
-  ret = camera_prepare(v_fd, V4L2_BUF_TYPE_VIDEO_CAPTURE, V4L2_BUF_MODE_RING, V4L2_PIX_FMT_UYVY, VIDEO_HSIZE_QVGA, VIDEO_VSIZE_QVGA, &buffers_video, 3, IMAGE_RGB_SIZE);
-  if (ret != OK)
-  {
-    close(v_fd);
-    return ERROR;
-  }
-
-  dest_buffer = malloc(IMAGE_RGB_SIZE);
-  if (!dest_buffer)
-  {
-    printf("ERROR: Failed to allocate memory for image buffer\n");
-    free_buffer(buffers_video, 3);
-    close(v_fd);
-    return ERROR;
-  }
-
-  ret = get_camimage(v_fd, &v4l2_buf, V4L2_BUF_TYPE_VIDEO_CAPTURE, dest_buffer, IMAGE_RGB_SIZE);
-  if (ret != OK)
-  {
-    free(dest_buffer);
-    free_buffer(buffers_video, 3);
-    close(v_fd);
-    return ERROR;
-  }
-
-  printf("Captured image size: %d bytes\n", v4l2_buf.length);
-
-  ret = release_camimage(v_fd, &v4l2_buf);
-  if (ret != OK)
-  {
-    free(dest_buffer);
-    free_buffer(buffers_video, 3);
-    close(v_fd);
-    return ERROR;
-  }
-
-  free(dest_buffer);
-  free_buffer(buffers_video, 3);
-  close(v_fd);
-
   return OK;
 }
