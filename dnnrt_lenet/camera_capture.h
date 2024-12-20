@@ -39,7 +39,7 @@ typedef struct v_buffer
 
 int camera_prepare(int fd, enum v4l2_buf_type type, uint32_t buf_mode, uint32_t pixformat, uint16_t hsize, uint16_t vsize, FAR v_buffer_t **vbuf, uint8_t buffernum, int buffersize);
 void free_buffer(FAR v_buffer_t *buffers, uint8_t bufnum);
-int get_camimage(int fd, FAR struct v4l2_buffer *v4l2_buf, enum v4l2_buf_type buf_type, void *dest_buffer, size_t dest_size);
+int get_camimage(int fd, FAR struct v4l2_buffer *v4l2_buf, enum v4l2_buf_type buf_type);
 int release_camimage(int fd, FAR struct v4l2_buffer *v4l2_buf);
 
 

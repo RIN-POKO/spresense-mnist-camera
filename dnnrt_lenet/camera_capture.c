@@ -100,7 +100,7 @@ void free_buffer(FAR v_buffer_t *buffers, uint8_t bufnum)
   }
 }
 
-int get_camimage(int fd, FAR struct v4l2_buffer *v4l2_buf, enum v4l2_buf_type buf_type, void *dest_buffer, size_t dest_size)
+int get_camimage(int fd, FAR struct v4l2_buffer *v4l2_buf, enum v4l2_buf_type buf_type)
 {
   int ret;
   memset(v4l2_buf, 0, sizeof(struct v4l2_buffer));
@@ -114,13 +114,7 @@ int get_camimage(int fd, FAR struct v4l2_buffer *v4l2_buf, enum v4l2_buf_type bu
     return ERROR;
   }
 
-  if (v4l2_buf->length > dest_size)
-  {
-    printf("Destination buffer is too small\n");
-    return ERROR;
-  }
-
-  // printf("Captured image size: %d bytes\n", v4l2_buf->length);
+  // printf("Captured image size: %d bytes\n", v4l2_buf->bytesused);
   return OK;
 }
 
