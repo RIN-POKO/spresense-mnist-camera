@@ -106,7 +106,7 @@ loader_nnb.c.home.r_okudera.Spresense_DEV.DNNRT_sample.dnnrt_lenet.o: \
  /home/r_okudera/Spresense_DEV/spresense/sdk/modules/include/asmp/types.h \
  /home/r_okudera/Spresense_DEV/spresense/sdk/modules/include/dnnrt/nnablart/network.h
 dnnrt_lenet_main.c.home.r_okudera.Spresense_DEV.DNNRT_sample.dnnrt_lenet.o: \
- dnnrt_lenet_main.c \
+ dnnrt_lenet_main.c dnnrt_lenet_main.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/stdio.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/nuttx/config.h \
  /home/r_okudera/Spresense_DEV/spresense/nuttx/include/sys/types.h \

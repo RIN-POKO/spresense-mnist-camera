@@ -1,43 +1,41 @@
+#include "dnnrt_lenet_main.h"
+
 /****************************************************************************
- * dnnrt_lenet/dnnrt_lenet_main.c
+ * 関数: convert_datatype
  *
- *   Copyright 2018 Sony Corporation
+ * 画像データのデータ型を変換
  ****************************************************************************/
+static void convert_datatype(dnn_runtime_t * rt)
+{
+  /* get datatype which this dnn_runtime_t expects */
+  nn_variable_t *var = dnn_runtime_input_variable(rt, 0);
+  float coefficient = (float)(1 << var->fp_pos);
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <sys/time.h>
-#include <nuttx/config.h>
-#include <dnnrt/runtime.h>
-#include <arch/board/cxd56_imageproc.h>
-#include "loader_nnb.h"
-#include "camera_capture.h"
-
-/****************************************************************************
- * 定義
- ****************************************************************************/
-#define DNN_NNB_PATH    "/mnt/sd0/lenet-5.nnb"
-#define OFFSET_X        (104)
-#define OFFSET_Y        (0)
-#define CLIP_WIDTH      (112)
-#define CLIP_HEIGHT     (224)
-#define DNN_WIDTH       (28)
-#define DNN_HEIGHT      (28)
-#define MNIST_SIZE_PX   (DNN_WIDTH * DNN_HEIGHT)
-
-/****************************************************************************
- * グローバル変数
- ****************************************************************************/
-static float s_img_buffer[MNIST_SIZE_PX];  // 推論用バッファ
-static volatile bool run_inference = true;  // 推論ループの制御
-
-/****************************************************************************
- * 関数プロトタイプ
- ****************************************************************************/
-static void normalize_image(float *normalized_buffer, FAR uint8_t *capture_data);
+  if (var->type == NN_DATA_TYPE_FLOAT)
+    {
+      /* do nothing since the image data is stored as float */
+    }
+  else if (var->type == NN_DATA_TYPE_INT16)
+    {
+      /* convert the image data in-place to 16-bit fixed-point values */
+      int16_t *int16_buffer = (int16_t *) s_img_buffer;
+      uint16_t px;
+      for (px = 0u; px < MNIST_SIZE_PX; px++)
+        {
+          int16_buffer[px] = (int16_t) (coefficient * s_img_buffer[px]);
+        }
+    }
+  else
+    {
+      /* convert the image data in-place to 8-bit fixed-point values */
+      int8_t *int8_buffer = (int8_t *) s_img_buffer;
+      uint16_t px;
+      for (px = 0u; px < MNIST_SIZE_PX; px++)
+        {
+          int8_buffer[px] = (int8_t) (coefficient * s_img_buffer[px]);
+        }
+    }
+}
 
 /****************************************************************************
  * 関数: normalize_image
@@ -75,6 +73,7 @@ static void normalize_image(float *normalized_buffer, FAR uint8_t *capture_data)
     return;
   }
 
+  //  グレースケール画像のバッファを確保
   uint8_t *gray_buffer = (uint8_t *)malloc(MNIST_SIZE_PX * sizeof(uint8_t));
   if (!gray_buffer) {
     printf("gray_buffer allocation failed\n");
@@ -89,6 +88,14 @@ static void normalize_image(float *normalized_buffer, FAR uint8_t *capture_data)
   for (int i = 0; i < MNIST_SIZE_PX; i++) {
     normalized_buffer[i] = (float)(gray_buffer[i]) / 255.0f;
   }
+
+  // //for debug
+  // for (int i = 0; i < DNN_HEIGHT; i++){
+  //   for (int j = 0; j < DNN_WIDTH; j++){
+  //     printf("%d ", gray_buffer[i * DNN_WIDTH + j]);
+  //   }
+  //   printf("\n");
+  // }
 
   free(gray_buffer);
   free(clip_buffer);
@@ -117,21 +124,22 @@ int main(int argc, char *argv[]) {
   printf("Loading neural network model: %s\n", DNN_NNB_PATH);
   network = alloc_nnb_network(DNN_NNB_PATH);
   if (!network) {
-    printf("Failed to load network.\n");
+    printf("load nnb file failed\n");
     return -1;
   }
 
-  // DNNランタイムの初期化
+  // すべてのDNNサブシステムの初期化
   ret = dnn_initialize(&config);
   if (ret) {
-    printf("Failed to initialize DNN runtime: %d\n", ret);
+    printf("dnn_initialize() failed due to %d", ret);
     destroy_nnb_network(network);
     return -1;
   }
 
+  // DNNランタイムの初期化  
   ret = dnn_runtime_initialize(&rt, network);
   if (ret) {
-    printf("Failed to initialize DNN runtime object: %d\n", ret);
+    printf("dnn_runtime_initialize() failed due to %d\n", ret);
     dnn_finalize();
     destroy_nnb_network(network);
     return -1;
@@ -143,6 +151,9 @@ int main(int argc, char *argv[]) {
     printf("ERROR: Failed to initialize video: errno = %d\n", errno);
     return -1;
   }
+
+  /* convert the image data to datatype this dnn_runtime_t expects */
+  convert_datatype(&rt);
 
   v_fd = open("/dev/video", 0);
   if (v_fd < 0) {
